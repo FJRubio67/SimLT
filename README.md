@@ -6,7 +6,7 @@ The `SimLT` R package allows for simulating times to event, based on the informa
 
 [Simulating times to event from a Life Table](https://rpubs.com/FJRubio/LTSim)
 
-See also: [GHSurv](https://github.com/FJRubio67/GHSurv), [LBANS](https://github.com/FJRubio67/LBANS)
+See also: [HazReg](https://github.com/FJRubio67/HazReg), [LBANS](https://github.com/FJRubio67/LBANS)
 
 ```
 library(devtools)
