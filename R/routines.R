@@ -29,7 +29,7 @@ hpwexp  <- function(x, rate = 1, t = 0, log = FALSE){
 #' @return Piecewise Exponential cumulative hazard function
 #' @export
 chpwexp  <- function(x, rate = 1, t = 0){
-  logsurv <- ppexp(x, rate = rate, t = t, lower.tail = TRUE, log.p = TRUE)
+  logsurv <- ppexp(x, rate = rate, t = t, lower.tail = FALSE, log.p = TRUE)
   return( - logsurv )
 }
 
@@ -123,7 +123,7 @@ simDesMatrix <- function(seed = 123, n = 100, admin.cens = "31-12-2015", scale.a
       if(dep[i]==4) tempmat[i,] <- t(rmultinom(n = 1,size = 1, prob = c(7.20,12.71,8.64,8.54,12.16,11.42,12.41,13.36,13.56)/100))
       if(dep[i]==5) tempmat[i,] <- t(rmultinom(n = 1,size = 1, prob = c(10.93,22.33,14.30,5.67,11.40,5.13,17.95,6.34,5.95)/100))
     }}
-  
+
   if(site == "colon" & sex == "male"){
     for(i in 1:n){
       if(dep[i]==1) tempmat[i,] <- t(rmultinom(n = 1,size = 1, prob = c(3.18,11.90,8.48,9.05,9.66,14.10,5.58,27.47,10.58)/100))
@@ -132,7 +132,7 @@ simDesMatrix <- function(seed = 123, n = 100, admin.cens = "31-12-2015", scale.a
       if(dep[i]==4) tempmat[i,] <- t(rmultinom(n = 1,size = 1, prob = c(8.20,13.09,10.72,9.48,9.58,12.52,11.24,12.94,12.23)/100))
       if(dep[i]==5) tempmat[i,] <- t(rmultinom(n = 1,size = 1, prob = c(11.40,23.03,12.50,7.12,14.99,4.22,15.16,6.37,5.21)/100))
     }}
-  
+
   if(site == "lung" & sex == "female"){
     for(i in 1:n){
       if(dep[i]==1) tempmat[i,] <- t(rmultinom(n = 1,size = 1, prob = c(3.87,13.63,9.13,8.89,7.88,13.44,6.19,26.15,10.82)/100))
@@ -141,7 +141,7 @@ simDesMatrix <- function(seed = 123, n = 100, admin.cens = "31-12-2015", scale.a
       if(dep[i]==4) tempmat[i,] <- t(rmultinom(n = 1,size = 1, prob = c(9.52,16.18,12.26,9.57,10.05,10.13,11.06,11.22,10.01)/100))
       if(dep[i]==5) tempmat[i,] <- t(rmultinom(n = 1,size = 1, prob = c(15.11,25.88,15.62,5.56,10.85,3.56,14.02,4.84,4.56)/100))
     }}
-  
+
   if(site == "lung" & sex == "male"){
     for(i in 1:n){
       if(dep[i]==1) tempmat[i,] <- t(rmultinom(n = 1,size = 1, prob = c(3.04,13.87,8.44,9.36,8.13,13.91,6.51,26.13,10.61)/100))
@@ -151,7 +151,7 @@ simDesMatrix <- function(seed = 123, n = 100, admin.cens = "31-12-2015", scale.a
       if(dep[i]==5) tempmat[i,] <- t(rmultinom(n = 1,size = 1, prob = c(12.16,24.48,14.91,6.77,12.90,4.02,15.26,5.09,4.41)/100))
     }}
   gor <- apply(tempmat,1,which1)
-  
+
   #-----------------------------
   # Date of diagnosis
   #-----------------------------
