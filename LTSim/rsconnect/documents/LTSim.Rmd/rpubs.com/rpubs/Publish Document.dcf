@@ -4,8 +4,7 @@ username:
 account: rpubs
 server: rpubs.com
 hostUrl: rpubs.com
-appId: https://api.rpubs.com/api/v1/document/926627/30587ada9cc64b3fa552b5853cb1216f
-bundleId: https://api.rpubs.com/api/v1/document/926627/30587ada9cc64b3fa552b5853cb1216f
-url: http://rpubs.com/FJRubio/926627
-when: 1658872762.92765
-lastSyncTime: 1658872762.92766
+appId: https://api.rpubs.com/api/v1/document/1208166/03b5317b70374cd4822521aade30c801
+bundleId: https://api.rpubs.com/api/v1/document/1208166/03b5317b70374cd4822521aade30c801
+url: http://rpubs.com/publish/claim/1208166/02c2bcc329a345f5a9bbd69d9aa35e19
+version: 1

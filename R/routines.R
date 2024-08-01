@@ -29,7 +29,7 @@ hpwexp  <- function(x, rate = 1, t = 0, log = FALSE){
 #' @return Piecewise Exponential cumulative hazard function
 #' @export
 chpwexp  <- function(x, rate = 1, t = 0){
-  logsurv <- ppexp(x, rate = rate, t = t, lower.tail = FALSE, log.p = TRUE)
+  logsurv <- ppexp(x, rate = rate, t = t, lower.tail = TRUE, log.p = TRUE)
   return( - logsurv )
 }
 

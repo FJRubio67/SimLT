@@ -103,13 +103,13 @@ for(i in 1:n){
   # Variable times (Birthdays + date of diagnosis)
   var.times <- c(seq(as.Date(bday1),last.day, by = "year"),dod)
   # Unique sorted time points
-  time.points <- sort(unique(c(fixed.times,var.times)))
+  time.points <- sort(unique(c(fixed.times,var.times,as.Date(last.day))))
   # Age at each time point
   age.tp <- ages(time.points)
   #*********************************************************
   # Removing dates before the date of diagnosis
   #*********************************************************
-  ind <- length(which(time.points==dod))
+  ind <- length(which(time.points<=dod))
   if(ind == 1 ){
     # Length of times in days between time points
     times[[i]] <- c(0,as.numeric(diff(time.points)))
