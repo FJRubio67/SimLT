@@ -43,8 +43,8 @@ A PDF manual is also available in the repository: [`simLT.pdf`](simLT.pdf).
 
 ## Tutorial
 
-- [Simulating times to event from a life table](https://rpubs.com/FJRubio/LTSim) —
-  illustrative RPubs tutorial showing how to construct the piecewise-constant
+- [Simulating times to event from a life table](https://fjrubio-ltsim.share.connect.posit.cloud/) —
+  illustrative tutorial showing how to construct the piecewise-constant
   hazard and simulate from a stratified life table
 
 ## Related resources
