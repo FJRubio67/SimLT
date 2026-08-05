@@ -1,0 +1,105 @@
+---
+title: "SurvLT: Calculating survival probabilities from a Life Table"
+author: '[F. Javier Rubio](https://sites.google.com/site/fjavierrubio67/)'
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+bibliography: references.bib
+---
+
+# Motivation
+In some contexts, one may be interested in calculating the survival probabilities (at specific time points) for a population of interest, based on the corresponding life tables. For instance, in relative survival analysis [@perme:2012], the so-called ``Pohar-Perme'' estimator requires the calculation of these probabilities for each individual in the data set. There are also cases where one may be interested in understanding the survival probabilities in a population of interest for specific combinations of individual characteristics (such as age, sex, year of diagnosis, and deprivation level). 
+
+The following R code presents a step-by-step illustrative example on the calculation of the survival probabilities of a set of individuals based on life tables from England for the years 2010-2015. The R command `spLT` from the `routines.R` source file performs the following steps:
+
+1. It calculates all the change points from the date of diagnosis (birthdays and new years) and merges them with the time points of interest.
+
+2. It extracts the hazard rates at these points from the life table.
+
+3. It calculates the integrals of the step function defined in the previous steps up to each time point of interest. These integrals represent the cumulative hazard function.
+
+4. It calculates the survival probabilities using the usual relationship between the cumulative hazard function and the survival function $S(t) = \exp\{-H(t)\}$.
+
+The `routines.R` source file can be found in the [SurvLT](https://github.com/FJRubio67/SurvLT) GitHub repository.
+
+See also: [SimLT](https://github.com/FJRubio67/SimLT)
+
+# Illustrative example: R code
+
+In this example we will calculate the survival probabilities for $n=1000$  individuals using a life table from England based on year, sex, deprivation level, age, English region (gor). The life table can be downloaded from [SimLT](https://github.com/FJRubio67/SimLT).
+
+## Data preparation
+```{r}
+rm(list=ls())
+
+# Required packages
+#library(devtools)
+#install_github("FJRubio67/SimLT")
+library(SimLT)
+library(msm)
+library(lubridate)
+library(data.table)
+# https://github.com/FJRubio67/SurvLT
+source("routinesSPLT.R")
+
+#------------------------------------------------------------------------
+# Life tables
+#------------------------------------------------------------------------
+LT <- data.table(read.table("England_LT_2010_2015_dep_gor.txt",header = T))
+head(LT)
+```
+
+## Simulated design matrix
+We now simulate the individuals' characteristics using the built-in function `simDesMatrix` in the R package `simLT`. These characteristics will be used to extract the hazard rates in the period of interest (piecewise constant hazard), and to calculate the survival probabilities. This function is based on real data on colon and lung (male and female) patients in England. You can use your own design matrix instead.
+
+```{r}
+#------------------------------------------------------------------------
+# Design matrix simulation 
+#------------------------------------------------------------------------
+# Sample size
+n <- 1000
+# Design matrix
+Xcf <- simDesMatrix(seed = 123, n = n, admin.cens = "31-12-2015", scale.age = FALSE,
+                    site = "colon", sex = "female")
+head(Xcf)
+
+Xcf$sex <- rep(2, nrow(Xcf))
+
+```
+
+
+## Calculating the survival probabilities
+Now, we calculate the survival probabilities for the simulated individuals at the time points of interest using the command `spLT`. The `spLT` command returns a list with the time points of interest (`tps`) and the survival probabilities (`psurv`) at those time points.
+
+```{r}
+#------------------------------------------------------------------------
+# Population survival probabilities at specific time points
+#------------------------------------------------------------------------
+
+# Time points of interest
+tps <- seq(0.1,5, by = 0.5)
+
+# Calculation of the survival probabilities
+sps <- spLT(tps = tps, LT = LT, des = Xcf, sdvars = c("dep","gor"), 
+     dodn = "date.diag", progress = FALSE, dy = 365.25)
+
+head(sps$psurv)
+
+
+# Some plots for specific individuals
+index <- c(1,200,400,600,800,1000)
+
+# Individual characteristics
+Xcf[index,]
+
+# Survival probabilities at times of interest
+par(mfrow=c(2,3))
+for(i in index){
+  plot(sps$tps, sps$psurv[i,], type = "p", ylim = c(0,1), lwd = 2, main = paste("Individual ", i),
+       xlab = "time", ylab = "Survival", cex.axis = 1.5, cex.lab = 1.5)
+}
+
+```
+
