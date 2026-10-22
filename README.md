@@ -43,7 +43,7 @@ A PDF manual is also available in the repository: [`simLT.pdf`](simLT.pdf).
 
 ## Tutorial
 
-- [Simulating times to event from a life table](https://fjrubio-ltsim.share.connect.posit.cloud/) —
+- [Simulating times to event from a life table](https://fjrubio-simlt.share.connect.posit.cloud) —
   illustrative tutorial showing how to construct the piecewise-constant hazard and simulate from a stratified life table.
 - [SurvLT: Calculating survival probabilities from a Life Table](https://fjrubio-survlt.share.connect.posit.cloud/) - a tutorial for calculating survival probabilities (at specific time points) for a population of interest, based on the corresponding life tables.
 
