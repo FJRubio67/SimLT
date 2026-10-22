@@ -1,4 +1,28 @@
-## ------------------------------------------------------------------------------------------------------------------
+---
+title: "SimLT: Simulating times to event from a Life Table"
+author: '[F. Javier Rubio](https://sites.google.com/site/fjavierrubio67/)'
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+bibliography: references.bib
+---
+
+# Motivation
+In many scenarios, we may be interested in simulating survival times from a population based on the corresponding life tables. For instance, in relative survival analysis [@rubio:2019] [@eletti:2022] simulation studies require the simulation of times to event based on life tables. These life tables are stratified on certain characteristics such as age, year, and deprivation level. The life table defines a piecewise-constant rate hazard function, for each combination of characteristics, which can be used to simulate the times to event.
+
+The [SimLT](https://github.com/FJRubio67/SimLT) R package allows for simulating times to event, based on the information in a life table. 
+
+The following R code presents a step-by-step illustrative example om the simulation of times to event based on life tables from England for the years 2010-2015. The `SimLT` R package requires functions from the R packages [msm](https://cran.r-project.org/web/packages/msm/index.html) and [lubridate](https://cran.r-project.org/web/packages/lubridate/index.html), which I decided not to include as dependencies. Thus, the user needs to install them and load them manually.
+
+See also: [GHSurv](https://github.com/FJRubio67/GHSurv), [LBANS](https://github.com/FJRubio67/LBANS)
+
+# Illustrative example: R code
+In this example we will simulate $n=1000$ times to event using a life table from England based on year, sex, deprivation level, age, English region (gor). The life table can be downloaded from [SimLT](https://github.com/FJRubio67/SimLT).
+
+## Data preparation
+```{r}
 rm(list=ls())
 
 # Required packages
@@ -13,9 +37,12 @@ library(lubridate)
 #------------------------------------------------------------------------
 LT <- as.data.frame(read.table("England_LT_2010_2015_dep_gor.txt",header = T))
 head(LT)
+```
 
+## Simulated design matrix
+We now simulate the individuals' characteristics using the built-in function `simDesMatrix`. These characteristics will be used to simulate the times to event. This function is based on real data on colon and lung (male and female) patients in England. You can use your own design matrix instead.
 
-## ------------------------------------------------------------------------------------------------------------------
+```{r}
 #------------------------------------------------------------------------
 # Design matrix simulation 
 #------------------------------------------------------------------------
@@ -25,9 +52,11 @@ n <- 1000
 Xcf <- simDesMatrix(seed = 123, n = n, admin.cens = "31-12-2015", scale.age = FALSE,
                     site = "colon", sex = "female")
 head(Xcf)
+```
 
-
-## ------------------------------------------------------------------------------------------------------------------
+## Follow-up period
+Define the follow-up period. This requires commands from the R package `lubridate`.
+```{r}
 #------------------------------------------------------------------------
 # Follow-up period
 #------------------------------------------------------------------------
@@ -35,9 +64,12 @@ head(Xcf)
 year.init <- 2010
 last.day <- as.Date("2015-12-31")
 fixed.times <- c(seq(as.Date("2010-01-01"), as.Date("2015-01-01"), by = "year"),last.day)
+```
 
+## Time points and hazard rates
+Now, we need to define the time points that define the step function associated to the piecewise-constant rate hazard function.
 
-## ------------------------------------------------------------------------------------------------------------------
+```{r}
 #------------------------------------------------------------------------
 # Time points and hazard rates
 #------------------------------------------------------------------------
@@ -71,13 +103,13 @@ for(i in 1:n){
   # Variable times (Birthdays + date of diagnosis)
   var.times <- c(seq(as.Date(bday1),last.day, by = "year"),dod)
   # Unique sorted time points
-  time.points <- sort(unique(c(fixed.times,var.times)))
+  time.points <- sort(unique(c(fixed.times,var.times,as.Date(last.day))))
   # Age at each time point
   age.tp <- ages(time.points)
   #*********************************************************
   # Removing dates before the date of diagnosis
   #*********************************************************
-  ind <- length(which(time.points==dod))
+  ind <- length(which(time.points<=dod))
   if(ind == 1 ){
     # Length of times in days between time points
     times[[i]] <- c(0,as.numeric(diff(time.points)))
@@ -107,9 +139,14 @@ for(i in 1:n){
 # List containing the simulated survival times, hazard rates, and last date of follow-up
 Xcf_rates <- list(times = times, hrates = hrates, dates = date)
 
+```
 
 
-## ------------------------------------------------------------------------------------------------------------------
+
+## Simulating the times to event
+Now, we simulate the times to event using the command `sim_pophaz`. This requires a seed for the simulation, and a list with time points at which the piecewise hazard jumps (times) and the values of the piecewise hazard (hrates). This list was constructed in the previous subsection.  
+
+```{r}
 ##################################################################################################
 # Population survival times
 ##################################################################################################
@@ -130,4 +167,5 @@ kmsim <- survfit(Surv(sim.pop, status.pop) ~ 1)
 plot(kmsim$time, kmsim$surv, type = "l", col = "black", lwd = 2, lty = 1, ylim = c(0,1),
      xlab = "Time", ylab = "Survival", cex.axis = 1.5, cex.lab = 1.5, main = "")
 
+```
 

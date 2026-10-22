@@ -4,15 +4,19 @@
 \alias{sim_pophaz}
 \title{Function to simulate survival times from the population hazard}
 \usage{
-sim_pophaz(seed, lst)
+sim_pophaz(seed, lst, method = c("direct", "uniroot"))
 }
 \arguments{
+\item{seed}{: seed for simulation}
+
 \item{lst}{: list with time points at which the piecewise hazard jumps (times) and the values of the piecewise hazard (hrates)}
 
-\item{seed:}{seed for simulation}
+\item{method}{: simulation method. "direct" (default) uses the exact inversion of the piecewise-linear
+cumulative hazard; "uniroot" uses numerical root search via rsim.pwexp. Both use the same random numbers,
+so they agree up to the tolerance of uniroot.}
 }
 \value{
-a list containing the simulated survival times and the ID
+a list containing the simulated survival times (sim.pop) and the status indicators (status; 1 = event, 0 = censored)
 }
 \description{
 Function to simulate survival times from the population hazard

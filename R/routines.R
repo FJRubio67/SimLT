@@ -1,4 +1,3 @@
-
 ###################################################################################################
 #' Piecewise Exponential hazard function
 ###################################################################################################
@@ -190,23 +189,47 @@ simDesMatrix <- function(seed = 123, n = 100, admin.cens = "31-12-2015", scale.a
 ###################################################################################################################
 #' Function to simulate survival times from the population hazard
 ###################################################################################################################
+#' @param seed : seed for simulation
 #' @param lst : list with time points at which the piecewise hazard jumps (times) and the values of the piecewise hazard (hrates)
-#' @param seed: seed for simulation
-#' @return a list containing the simulated survival times and the ID
+#' @param method : simulation method. "direct" (default) uses the exact inversion of the piecewise-linear
+#' cumulative hazard; "uniroot" uses numerical root search via rsim.pwexp. Both use the same random numbers,
+#' so they agree up to the tolerance of uniroot.
+#' @return a list containing the simulated survival times (sim.pop) and the status indicators (status; 1 = event, 0 = censored)
+#' @importFrom msm dpexp ppexp
+#' @importFrom stats rmultinom runif uniroot
 #' @export
 
-sim_pophaz <- function(seed,lst){
-  sim.pop <- vector()
-  ind.pop <- vector()
+sim_pophaz <- function(seed, lst, method = c("direct", "uniroot")){
+  method <- match.arg(method)
   n <- length(lst$times)
-  for(i in 1:n){
+  sim.pop <- numeric(n)
+  ind.pop <- numeric(n)
+  for(i in seq_len(n)){
     times.temp <- cumsum(lst$times[[i]])/365.25
     rates.temp <- lst$hrates[[i]]
-    temp.sim <- rsim.pwexp(seed = (seed+i), n = 1, rate = rates.temp, t = times.temp)
-    sim.pop[i] <- temp.sim$sim.pop
-    ind.pop[i] <- temp.sim$status.pop
+    if(method == "uniroot"){
+      # Numerical inversion of the cumulative hazard
+      temp.sim <- rsim.pwexp(seed = (seed+i), n = 1, rate = rates.temp, t = times.temp)
+      sim.pop[i] <- temp.sim$sim.pop
+      ind.pop[i] <- temp.sim$status.pop
+    } else {
+      # Exact inversion of the piecewise-linear cumulative hazard
+      set.seed(seed+i)
+      vals <- -log(1-runif(1))
+      K <- length(times.temp)
+      # cumulative hazard at the change points
+      H <- c(0, cumsum(rates.temp[-K]*diff(times.temp)))
+      if(vals > H[K]){
+        # censored at the maximum follow-up time
+        sim.pop[i] <- times.temp[K]
+        ind.pop[i] <- 0
+      } else {
+        j <- findInterval(vals, H, rightmost.closed = TRUE)
+        sim.pop[i] <- times.temp[j] + (vals - H[j])/rates.temp[j]
+        ind.pop[i] <- 1
+      }
+    }
   }
   out <- list(sim.pop = sim.pop, status = ind.pop)
+  return(out)
 }
-
-

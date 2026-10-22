@@ -10,13 +10,13 @@ bibliography: references.bib
 ---
 
 # Motivation
-In many scenarios, we may be interested in simulating survival times from a population based on the corresponding life tables. For instance, in relative survival analysis [@rubio:2019] [@eletti:2022] simulation studies require the simulation of times to event based on life tables. These life tables are stratified on certain characteristics such as age, year, and deprivation level. The life table defines a piecewise-constant rate hazard function, for each combination of characteristics, which can be used to simulate the times to event.
+In many scenarios, we may be interested in simulating survival times from a population based on the corresponding life tables. For instance, in relative survival analysis [@rubio:2019] [@eletti:2022] [@basak:2025] simulation studies require the simulation of times to event based on life tables. These life tables are stratified on certain characteristics such as age, year, and deprivation level. The life table defines a piecewise-constant rate hazard function, for each combination of characteristics, which can be used to simulate the times to event.
 
 The [SimLT](https://github.com/FJRubio67/SimLT) R package allows for simulating times to event, based on the information in a life table. 
 
 The following R code presents a step-by-step illustrative example om the simulation of times to event based on life tables from England for the years 2010-2015. The `SimLT` R package requires functions from the R packages [msm](https://cran.r-project.org/web/packages/msm/index.html) and [lubridate](https://cran.r-project.org/web/packages/lubridate/index.html), which I decided not to include as dependencies. Thus, the user needs to install them and load them manually.
 
-See also: [GHSurv](https://github.com/FJRubio67/GHSurv), [LBANS](https://github.com/FJRubio67/LBANS)
+See also: [GHSurv](https://github.com/FJRubio67/GHSurv), [LBANS](https://github.com/FJRubio67/LBANS) [HazReg](https://github.com/FJRubio67/HazReg)
 
 # Illustrative example: R code
 In this example we will simulate $n=1000$ times to event using a life table from England based on year, sex, deprivation level, age, English region (gor). The life table can be downloaded from [SimLT](https://github.com/FJRubio67/SimLT).
@@ -74,70 +74,48 @@ Now, we need to define the time points that define the step function associated 
 # Time points and hazard rates
 #------------------------------------------------------------------------
 
-# function to calculate ages at time points
-ages <- Vectorize(function(dates){
-  out <- time_length(difftime(as.Date(dates), as.Date(dob)), "years")
-  return(out)
-})
-
-# Variables to be used from the life table
-MLT <- LT[,c("X_year","sex","dep","age","gor")]
-
-# Initialising times, dates, and hrates
-times <- dates <- hrates <- list()
+# Date of diagnosis and date of birth (29 February is moved to 1 March)
+dod <- as.Date(Xcf$date.diag)
+dob <- as.POSIXlt(dod - Xcf$age*365.25)
+leap <- dob$mday == 29 & dob$mon == 1
+dob$mday[leap] <- 1
+dob$mon[leap] <- 2
+dob <- as.Date(format(dob, "%Y-%m-%d"))
 
 # sex
 sex0 <- 2
 
-# Extracting the hazard rates from the life tables for each patient at "age + t"
+# Candidate time points for all patients at once:
+# date of diagnosis, new years, birthdays, and last day of follow-up
+yrs <- year.init:year(last.day)
+cand <- data.frame(
+  id   = c(1:n, rep(1:n, each = length(yrs)), rep(1:n, each = length(yrs)), 1:n),
+  date = c(dod,
+           rep(as.Date(paste0(yrs, "-01-01")), n),
+           as.Date(paste0(rep(yrs, n), rep(format(dob, "-%m-%d"), each = length(yrs)))),
+           rep(last.day, n)))
+# Keep the points between diagnosis and the last day of follow-up, sorted by patient and date
+cand <- cand[cand$date >= dod[cand$id] & cand$date <= last.day, ]
+cand <- unique(cand)
+cand <- cand[order(cand$id, cand$date), ]
 
-#pb = txtProgressBar(min = 0, max = n, initial = 1) # uncomment to track progress
-for(i in 1:n){
-  # Date of birth
-  dob <- as.POSIXlt(as.Date(Xcf[i,2]) - Xcf[i,5]*365.25)
-  if(day(dob)==29 & month(dob)==2) day(dob) <- 1; month(dob) <- 3
-  # Birthday on 2010
-  bday1 <- dob; year(bday1) <- year.init; bday1 <-as.Date(bday1);
-  # Date of diagnosis
-  dod <- as.Date(Xcf[i,2])
-  # Variable times (Birthdays + date of diagnosis)
-  var.times <- c(seq(as.Date(bday1),last.day, by = "year"),dod)
-  # Unique sorted time points
-  time.points <- sort(unique(c(fixed.times,var.times,as.Date(last.day))))
-  # Age at each time point
-  age.tp <- ages(time.points)
-  #*********************************************************
-  # Removing dates before the date of diagnosis
-  #*********************************************************
-  ind <- length(which(time.points<=dod))
-  if(ind == 1 ){
-    # Length of times in days between time points
-    times[[i]] <- c(0,as.numeric(diff(time.points)))
-    # Length of times in days between time points
-    dates[[i]] <- time.points
-    # Age at each time point (integer part)
-    age.tp <- floor(age.tp)
-  }
-  if(ind > 1 ){
-    # Length of times in days between time points
-    times[[i]] <- c(0,as.numeric(diff(time.points))[-c(1:(ind-1))])
-    # Length of times in days between time points
-    dates[[i]] <- time.points[-c(1:(ind-1))]
-    # Age at each time point (integer part)
-    age.tp <- floor(age.tp[-c(1:(ind-1))])
-  }
-  MAT.ID <- cbind(1:length(age.tp),year(dates[[i]]),rep(sex0,length(age.tp)), rep(Xcf[i,"dep"],length(age.tp)),
-                  age.tp,rep(Xcf[i,"gor"],length(age.tp)))
-  MAT.ID <- as.data.frame(MAT.ID)
-  colnames(MAT.ID) <- c("index","X_year", "sex", "dep", "age", "gor")
-  hrates[[i]] <- merge(x = MAT.ID, y = LT, by = colnames(MAT.ID)[-1], all.x = TRUE, sort = FALSE)
-  hrates[[i]] <- hrates[[i]][order(hrates[[i]]$index),]
-  hrates[[i]] <- hrates[[i]]$rate
-#  setTxtProgressBar(pb,i) # uncomment to track progress
-}
+# Age (completed years) at each time point
+cand$age <- year(cand$date) - year(dob[cand$id]) -
+  (format(cand$date, "%m%d") < format(dob[cand$id], "%m%d"))
 
-# List containing the simulated survival times, hazard rates, and last date of follow-up
-Xcf_rates <- list(times = times, hrates = hrates, dates = date)
+# Extracting the hazard rates from the life table for each patient at "age + t":
+# a single hashed lookup on (year, sex, dep, age, gor) for all patients
+LT.key <- paste(LT$X_year, LT$sex, LT$dep, LT$age, LT$gor)
+key <- paste(year(cand$date), sex0, Xcf$dep[cand$id], cand$age, Xcf$gor[cand$id])
+cand$rate <- LT$rate[match(key, LT.key)]
+
+# Dates, lengths of times in days between time points, and hazard rates for each patient
+dates  <- unname(split(cand$date, cand$id))
+times  <- lapply(dates, function(d) c(0, as.numeric(diff(d))))
+hrates <- unname(split(cand$rate, cand$id))
+
+# List containing the time points, hazard rates, and dates
+Xcf_rates <- list(times = times, hrates = hrates, dates = dates)
 
 ```
 
@@ -150,7 +128,7 @@ Now, we simulate the times to event using the command `sim_pophaz`. This require
 ##################################################################################################
 # Population survival times
 ##################################################################################################
-simC <- sim_pophaz(seed = 123,lst = Xcf_rates)
+simC <- sim_pophaz(seed = 123,lst = Xcf_rates, method = "direct")
 sim.pop <- simC$sim.pop
 status.pop <- simC$status
 
