@@ -21,8 +21,8 @@ an illustrative dataset.
 ## Installation
 
 ```r
-# install.packages("devtools")
-devtools::install_github("FJRubio67/SimLT")
+# install.packages("pak")
+pak::pak("FJRubio67/SimLT")
 library(SimLT)
 ```
 
