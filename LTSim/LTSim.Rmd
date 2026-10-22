@@ -26,8 +26,7 @@ In this example we will simulate $n=1000$ times to event using a life table from
 rm(list=ls())
 
 # Required packages
-#library(devtools)
-#install_github("FJRubio67/SimLT")
+#pak::pak("FJRubio67/SimLT")
 library(SimLT)
 library(msm)
 library(lubridate)
